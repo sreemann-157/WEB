@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html ng-app="studentApp">
+<head>
+  <meta charset="UTF-8">
+  <title>Student Management</title>
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
+  <script src="app.js"></script>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body ng-controller="StudentController">
+
+  <h1>Student Management System</h1>
+
+  <!-- Add / Update Student -->
+  <div>
+    <h3>{{editMode ? "Update Student" : "Add Student"}}</h3>
+    <form ng-submit="editMode ? updateStudent() : addStudent()">
+      <input type="number" placeholder="Register No" ng-model="student.registerNo" required ng-disabled="editMode">
+      <input type="text" placeholder="Name" ng-model="student.name" required>
+      <input type="number" placeholder="Age" ng-model="student.age" required>
+      <input type="text" placeholder="Department" ng-model="student.department" required>
+      <button type="submit">{{editMode ? "Update" : "Add"}}</button>
+      <button type="button" ng-click="resetForm()">Reset</button>
+    </form>
+  </div>
+
+  <!-- Student List -->
+  <h3>Student List</h3>
+  <table border="1" cellpadding="5">
+    <tr>
+      <th>Register No</th>
+      <th>Name</th>
+      <th>Age</th>
+      <th>Department</th>
+      <th>Actions</th>
+    </tr>
+    <tr ng-repeat="s in students">
+      <td>{{s.registerNo}}</td>
+      <td>{{s.name}}</td>
+      <td>{{s.age}}</td>
+      <td>{{s.department}}</td>
+      <td>
+        <button ng-click="editStudent(s)">Edit</button>
+        <button ng-click="deleteStudent(s.registerNo)">Delete</button>
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>

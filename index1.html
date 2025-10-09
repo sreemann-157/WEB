@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="studentApp">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Student Management</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.2/angular.min.js"></script>
+    <style>
+      /* Minimal CSS */
+      body {
+        font-family: Arial, sans-serif;
+        padding: 20px;
+      }
+
+      h2 {
+        margin-bottom: 10px;
+      }
+
+      form input {
+        margin: 5px;
+        padding: 5px;
+      }
+
+      form button {
+        padding: 5px 10px;
+        margin: 5px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 15px;
+      }
+
+      th,
+      td {
+        border: 1px solid #000;
+        padding: 8px;
+        text-align: left;
+      }
+
+      th {
+        background-color: #ccc;
+      }
+
+      input.search {
+        margin-top: 10px;
+        padding: 5px;
+        width: 200px;
+      }
+    </style>
+  </head>
+  <body ng-controller="StudentController">
+    <h2>Student Management</h2>
+
+    <!-- Form to Add / Update Student -->
+    <form ng-submit="editMode ? updateStudent() : addStudent()">
+      <input
+        type="number"
+        placeholder="Register No"
+        ng-model="student.registerNo"
+        required
+      />
+      <input type="text" placeholder="Name" ng-model="student.name" required />
+      <input
+        type="text"
+        placeholder="Dept Name"
+        ng-model="student.deptName"
+        required
+      />
+      <input
+        type="number"
+        placeholder="Marks"
+        ng-model="student.marks"
+        min="0"
+        max="100"
+        required
+      />
+      <button type="submit">{{ editMode ? 'Update' : 'Add' }}</button>
+      <button type="button" ng-click="resetForm()">Reset</button>
+    </form>
+
+    <!-- Filter by Marks -->
+    <input
+      type="number"
+      placeholder="Filter by minimum marks"
+      ng-model="marksFilter"
+      class="search"
+    />
+
+    <!-- Student Table -->
+    <table>
+      <thead>
+        <tr>
+          <th>Register No</th>
+          <th>Name</th>
+          <th>Dept Name</th>
+          <th>Marks</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr ng-repeat="s in students | filter:marksGreaterThan">
+          <td>{{ s.registerNo }}</td>
+          <td>{{ s.name }}</td>
+          <td>{{ s.deptName }}</td>
+          <td>{{ s.marks }}</td>
+          <td>
+            <button ng-click="editStudent(s)">Edit</button>
+            <button ng-click="deleteStudent(s.registerNo)">Delete</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <script>
+      var app = angular.module("studentApp", []);
+
+      // Factory for API
+      app.factory("StudentFactory", function ($http) {
+        const apiUrl = "http://localhost:5000/student";
+        return {
+          getAll: () => $http.get("http://localhost:5000/students"),
+          add: (student) => $http.post(apiUrl, student),
+          update: (student) =>
+            $http.put(apiUrl + "/" + student.registerNo, student),
+          delete: (regNo) => $http.delete(apiUrl + "/" + regNo),
+        };
+      });
+
+      // Service to use Factory
+      app.service("StudentService", function (StudentFactory) {
+        this.getStudents = () => StudentFactory.getAll();
+        this.addStudent = (student) => StudentFactory.add(student);
+        this.updateStudent = (student) => StudentFactory.update(student);
+        this.deleteStudent = (regNo) => StudentFactory.delete(regNo);
+      });
+
+      // Filter for marks
+      app.filter("marksGreaterThan", function () {
+        return function (students, marksFilter) {
+          if (!marksFilter) return students;
+          return students.filter((s) => s.marks >= marksFilter);
+        };
+      });
+
+      // Controller
+      app.controller("StudentController", function ($scope, StudentService) {
+        $scope.students = [];
+        $scope.student = {};
+        $scope.editMode = false;
+        $scope.marksFilter = "";
+
+        $scope.loadStudents = function () {
+          StudentService.getStudents()
+            .then((res) => ($scope.students = res.data))
+            .catch((err) => console.error(err));
+        };
+
+        $scope.addStudent = function () {
+          StudentService.addStudent($scope.student)
+            .then((res) => {
+              alert(res.data.message);
+              $scope.loadStudents();
+              $scope.resetForm();
+            })
+            .catch((err) => alert(err.data.error));
+        };
+
+        $scope.editStudent = function (s) {
+          $scope.student = angular.copy(s);
+          $scope.editMode = true;
+        };
+
+        $scope.updateStudent = function () {
+          StudentService.updateStudent($scope.student)
+            .then((res) => {
+              alert(res.data.message);
+              $scope.loadStudents();
+              $scope.resetForm();
+            })
+            .catch((err) => alert(err.data.error));
+        };
+
+        $scope.deleteStudent = function (regNo) {
+          if (confirm("Are you sure you want to delete this student?")) {
+            StudentService.deleteStudent(regNo)
+              .then((res) => {
+                alert(res.data.message);
+                $scope.loadStudents();
+              })
+              .catch((err) => alert(err.data.error));
+          }
+        };
+
+        $scope.resetForm = function () {
+          $scope.student = {};
+          $scope.editMode = false;
+        };
+
+        $scope.loadStudents();
+      });
+    </script>
+  </body>
+</html>
